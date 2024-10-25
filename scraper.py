@@ -29,7 +29,13 @@ def search_nvidia_mentions(subreddit_name, limit=10):
         subreddit = reddit.subreddit(subreddit_name)
         mentions = []
         search_terms = ['NVDA', 'Nvidia', 'nvidia']
-        
+        # NOTE: I want a way so that it can search all comments below an NVDA themed post, not just comments with the buzzword in them
+            # Maybe once I am more skilled
+
+        # Add stock-related keywords if the subreddit is 'nvidia'
+        if subreddit_name.lower() == 'nvidia':
+            search_terms.extend(['stock', 'shares', 'invest', 'investment', 'investing'])
+                                 
         for term in search_terms:
             try:
                 for submission in subreddit.search(term, limit=limit):
