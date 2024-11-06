@@ -22,6 +22,7 @@ app.add_middleware(
 async def root():
     return {"message": "NVIDIA Mentions Tracker API"}
 
+# In main.py
 @app.get("/mentions")
 async def get_mentions(limit: int = 10):
     try:
