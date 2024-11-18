@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { format, isWithinInterval, subWeeks } from 'date-fns';
 import { ArrowUpCircle, Clock, MessageCircle, Search, Bell, Menu } from "lucide-react";
+import SentimentBadge from './SentimentBadge';
 
 function App() {
   const [mentions, setMentions] = useState([]);
@@ -11,10 +12,10 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const filterRecentMentions = (mentions) => {
-    const twoWeeksAgo = subWeeks(new Date(), 2);
+    const eightDaysAgo = subWeeks(new Date(), 8/7);
     return mentions.filter(mention => 
       isWithinInterval(new Date(mention.timestamp), {
-        start: twoWeeksAgo,
+        start: eightDaysAgo,
         end: new Date()
       })
     );
@@ -25,7 +26,9 @@ function App() {
       try {
         setLoading(true);
         const response = await axios.get('http://localhost:8000/mentions');
+        console.log("[DEBUG] API Response:", response.data.mentions);
         const filteredMentions = filterRecentMentions(response.data.mentions);
+        console.log("[DEBUG] Filtered Mentions:", filteredMentions);
         setMentions(filteredMentions);
       } catch (err) {
         setError('Failed to fetch mentions');
@@ -111,35 +114,36 @@ function App() {
           </div>
 
           <div className="divide-y">
-            {mentions.map((mention) => (
-              <div key={mention.post_id} className="p-6">
-                <a
-                  href={mention.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 text-lg font-medium block mb-2"
-                >
-                  {mention.title}
-                </a>
+            {mentions.map(mention => (
+              <div key={mention.post_id} className="border-b last:border-b-0">
+                <div className="p-6">
+                  <h3 className="text-lg font-semibold mb-2">
+                    <a href={mention.url} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600">
+                      {mention.title}
+                    </a>
+                  </h3>
+                  
+                  <SentimentBadge sentiment={mention.sentiment} />
+                  
+                  <div className="flex items-center text-sm text-gray-500 mt-4 space-x-4">
+                    <div className="flex items-center gap-1">
+                      <ArrowUpCircle className="w-4 h-4" />
+                      {mention.upvotes.toLocaleString()} upvotes
+                    </div>
 
-                <div className="flex items-center gap-4 text-sm text-gray-600">
-                  <div className="flex items-center gap-1">
-                    <ArrowUpCircle className="w-4 h-4" />
-                    {mention.upvotes.toLocaleString()} upvotes
-                  </div>
+                    <div className="flex items-center gap-1">
+                      <MessageCircle className="w-4 h-4" />
+                      {mention.comment_count} comments
+                    </div>
 
-                  <div className="flex items-center gap-1">
-                    <MessageCircle className="w-4 h-4" />
-                    {mention.comment_count} comments
-                  </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      {format(new Date(mention.timestamp), 'MMM d, yyyy h:mm a')}
+                    </div>
 
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    {format(new Date(mention.timestamp), 'MMM d, yyyy h:mm a')}
-                  </div>
-
-                  <div className="ml-auto">
-                    r/{mention.subreddit}
+                    <div className="ml-auto">
+                      r/{mention.subreddit}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -150,7 +154,7 @@ function App() {
 
       <footer className="bg-white border-t py-4">
         <div className="container mx-auto px-4 text-center text-sm text-gray-600">
-          © 2024 NVIDIA Mentions Tracker. All rights reserved.
+          © 2024 NVIDIA Mentions Tracker. All rights reserved. | Created by Cameron Byrne
         </div>
       </footer>
     </div>

@@ -2,8 +2,9 @@
 
 import praw
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from config import REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, REDDIT_USER_AGENT
+from sentiment_analyzer import analyze_sentiment
 
 def init_reddit():
     try:
@@ -23,14 +24,14 @@ def init_reddit():
 def search_nvidia_mentions(subreddit_name, limit=10):
     reddit = init_reddit()
     if not reddit:
-        return pd.DataFrame()  # Return empty DataFrame if authentication fails
+        return pd.DataFrame()
         
     try:
         subreddit = reddit.subreddit(subreddit_name)
         mentions = []
         search_terms = ['NVDA', 'Nvidia', 'nvidia']
-        # NOTE: I want a way so that it can search all comments below an NVDA themed post, not just comments with the buzzword in them
-            # Maybe once I am more skilled
+        eight_days_ago = datetime.now() - timedelta(days=8)
+        seen_posts = set()  # Track seen post IDs
 
         # Add stock-related keywords if the subreddit is 'nvidia'
         if subreddit_name.lower() == 'nvidia':
@@ -39,19 +40,31 @@ def search_nvidia_mentions(subreddit_name, limit=10):
         for term in search_terms:
             try:
                 for submission in subreddit.search(term, limit=limit):
-                    mentions.append({
-                        'post_id': submission.id,
-                        'title': submission.title,
-                        'content': submission.selftext,
-                        'subreddit': subreddit_name,
-                        'timestamp': datetime.fromtimestamp(submission.created_utc),
-                        'upvotes': submission.score,
-                        'comment_count': submission.num_comments,
-                        'url': f'https://reddit.com{submission.permalink}'
-                    })
+                    submission_date = datetime.fromtimestamp(submission.created_utc)
+                    # Only add if we haven't seen this post ID and it's within 8 days
+                    if submission.id not in seen_posts and submission_date >= eight_days_ago:
+                        # Combine title and content for sentiment analysis
+                        full_text = f"{submission.title}\n{submission.selftext}"
+                        sentiment_result = analyze_sentiment(full_text)
+                        print(f"[DEBUG] Sentiment result for {submission.title}: {sentiment_result}")
+                        
+                        mentions.append({
+                            'post_id': submission.id,
+                            'title': submission.title,
+                            'content': submission.selftext,
+                            'subreddit': subreddit_name,
+                            'timestamp': submission_date,
+                            'upvotes': submission.score,
+                            'comment_count': submission.num_comments,
+                            'url': f'https://reddit.com{submission.permalink}',
+                            'sentiment': sentiment_result
+                        })
+                        seen_posts.add(submission.id)
+                        print(f"[DEBUG] Added post from r/{subreddit_name}: {submission.title} (ID: {submission.id})")
             except Exception as e:
                 print(f"Error searching for term '{term}' in r/{subreddit_name}: {str(e)}")
                 
+        print(f"\n[DEBUG] Total posts found in r/{subreddit_name}: {len(mentions)}")
         return pd.DataFrame(mentions)
     except Exception as e:
         print(f"Error accessing r/{subreddit_name}: {str(e)}")
