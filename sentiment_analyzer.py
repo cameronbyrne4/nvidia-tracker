@@ -27,3 +27,14 @@ def analyze_sentiment(text):
     except Exception as e:
         print(f"[ERROR] Sentiment analysis failed: {str(e)}")
         return None
+
+def analyze_multiple_sentiments(sentiments):
+    prompt = "Please note that the following sentiments are independent of each other, and your job is to analyze them and provide an overall final sentiment that considers all sentiments, with their weight of consideration being based on confidence.\n\n"
+    
+    for sentiment in sentiments:
+        prompt += f"Sentiment: {sentiment['sentiment']}, Confidence: {sentiment['confidence']:.2f}, Explanation: {sentiment['explanation']}\n"
+    
+    return analyze_sentiment(prompt)
+
+# Export the function
+__all__ = ['analyze_sentiment', 'analyze_multiple_sentiments']

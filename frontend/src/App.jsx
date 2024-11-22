@@ -5,6 +5,7 @@ import { format, isWithinInterval, subWeeks } from 'date-fns';
 import { ArrowUpCircle, Clock, MessageCircle } from "lucide-react";
 import SentimentBadge from './SentimentBadge';
 import nvidiaLogo from './assets/nvidia-7.svg';
+//import { analyze_multiple_sentiments } from 'frontend/sentiment_analyzer'; // Adjust the path as necessary
 
 function App() {
   const [mentions, setMentions] = useState([]);
@@ -30,10 +31,12 @@ function App() {
       try {
         setLoading(true);
         const response = await axios.get('http://localhost:8000/mentions');
-        console.log("[DEBUG] API Response:", response.data.mentions);
+        console.log("[DEBUG] API Response:", response.data);
         const filteredMentions = filterRecentMentions(response.data.mentions);
         console.log("[DEBUG] Filtered Mentions:", filteredMentions);
         setMentions(filteredMentions);
+        console.log("cam debug shiii:", response.data.final_sentiment);
+        setFinalSentiment(response.data.final_sentiment); // Set final sentiment from response
       } catch (err) {
         setError('Failed to fetch mentions');
         console.error(err);
@@ -45,31 +48,14 @@ function App() {
     fetchMentions();
   }, []);
 
-  // Calculate the final sentiment based on all mentions
-  const calculateFinalSentiment = () => {
-    const sentiments = mentions.map(mention => {
-      const sentimentData = JSON.parse(mention.sentiment);
-      return {
-        sentiment: sentimentData.sentiment,
-        confidence: sentimentData.confidence
-      };
-    });
-
-    // Calculate average sentiment (this is a simplified example)
-    const positiveCount = sentiments.filter(s => s.sentiment === 'positive').length;
-    const negativeCount = sentiments.filter(s => s.sentiment === 'negative').length;
-    const total = sentiments.length;
-
-    const averageSentiment = (positiveCount - negativeCount) / total;
-
-    setFinalSentiment(averageSentiment > 0 ? 'Positive' : averageSentiment < 0 ? 'Negative' : 'Neutral');
-    setShowPopup(true);
-  };
-
   // Close the sentiment popup
   const closePopup = () => {
     setShowPopup(false);
-    setFinalSentiment(null);
+  };
+
+  // Show the sentiment popup
+  const showSentimentPopup = () => {
+    setShowPopup(true);
   };
 
   // Loading state
@@ -118,7 +104,7 @@ function App() {
           <div className="p-6 border-b">
             <h2 className="text-xl font-semibold mb-2">Recent Mentions</h2>
             <p className="text-sm text-gray-600">See individual posts mentioning NVIDIA below. Included is a AI-generated summary of the post as well as a marker of the post's sentiment.</p>
-            <button onClick={calculateFinalSentiment} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <button onClick={showSentimentPopup} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
               Summarize Forum Activity
             </button>
           </div>
@@ -167,6 +153,7 @@ function App() {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg">
             <h2 className="text-lg font-bold">Final Sentiment</h2>
+            {console.log("[DEBUG] Final Sentiment:", finalSentiment)}
             <p>{finalSentiment}</p>
             <button onClick={closePopup} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
               Close

@@ -1,33 +1,32 @@
 # scraper.py
 
-import praw
+import asyncpraw
 import pandas as pd
 from datetime import datetime, timedelta
 from config import REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, REDDIT_USER_AGENT
 from sentiment_analyzer import analyze_sentiment
 
-def init_reddit():
+async def init_reddit():
     try:
-        reddit = praw.Reddit(
+        reddit = asyncpraw.Reddit(
             client_id=REDDIT_CLIENT_ID,
             client_secret=REDDIT_CLIENT_SECRET,
             user_agent=REDDIT_USER_AGENT
         )
         # Test the connection
-        reddit.user.me()
+        await reddit.user.me()
         return reddit
     except Exception as e:
         print(f"Authentication Error: {str(e)}")
-        print(f"Using credentials - Client ID: {REDDIT_CLIENT_ID[:5]}... User Agent: {REDDIT_USER_AGENT}")
         return None
 
-def search_nvidia_mentions(subreddit_name, limit=10):
-    reddit = init_reddit()
+async def search_nvidia_mentions(subreddit_name, limit=10):
+    reddit = await init_reddit()
     if not reddit:
         return pd.DataFrame()
         
     try:
-        subreddit = reddit.subreddit(subreddit_name)
+        subreddit = await reddit.subreddit(subreddit_name)
         mentions = []
         search_terms = ['NVDA', 'Nvidia', 'nvidia']
         eight_days_ago = datetime.now() - timedelta(days=8)
@@ -39,13 +38,13 @@ def search_nvidia_mentions(subreddit_name, limit=10):
                                  
         for term in search_terms:
             try:
-                for submission in subreddit.search(term, limit=limit):
+                async for submission in subreddit.search(term, limit=limit):
                     submission_date = datetime.fromtimestamp(submission.created_utc)
                     # Only add if we haven't seen this post ID and it's within 8 days
                     if submission.id not in seen_posts and submission_date >= eight_days_ago:
                         # Combine title and content for sentiment analysis
                         full_text = f"{submission.title}\n{submission.selftext}"
-                        sentiment_result = analyze_sentiment(full_text)
+                        sentiment_result = await analyze_sentiment(full_text)
                         print(f"[DEBUG] Sentiment result for {submission.title}: {sentiment_result}")
                         
                         mentions.append({

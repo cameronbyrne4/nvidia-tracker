@@ -8,6 +8,8 @@ from scraper import search_nvidia_mentions
 import pandas as pd
 from openai import OpenAI
 from config import OPENAI_API_KEY
+from sentiment_analyzer import analyze_multiple_sentiments
+import json
 
 app = FastAPI(title="NVIDIA Mentions Tracker")
 
@@ -35,7 +37,7 @@ async def get_mentions(limit: int = 10):
         print("\n[DEBUG] Starting mention collection...")
         
         for subreddit in subreddits:
-            df = search_nvidia_mentions(subreddit, limit=limit) #from scraper.py
+            df = await search_nvidia_mentions(subreddit, limit=limit)  # Call async function
             if not df.empty:
                 # Filter out any duplicates before adding to all_mentions
                 new_posts = df[~df['post_id'].isin(seen_post_ids)]
@@ -56,11 +58,24 @@ async def get_mentions(limit: int = 10):
         
         mentions = combined_df.to_dict('records')
         print(f"\n[DEBUG] Final total unique posts: {len(mentions)}")
-        
+
+        # Calculate final sentiment
+        sentiments = []
+        for mention in mentions:
+            sentiment_data = json.loads(mention['sentiment'])
+            sentiments.append({
+                'sentiment': sentiment_data['sentiment'],
+                'confidence': sentiment_data['confidence'],
+                'explanation': sentiment_data['explanation']
+            })
+
+        final_sentiment_data = await analyze_multiple_sentiments(sentiments)  # Call async function
+
         return {
             "mentions": mentions,
             "count": len(mentions),
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "final_sentiment": final_sentiment_data  # Include final sentiment in the response
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
