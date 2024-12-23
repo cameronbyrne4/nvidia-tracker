@@ -1,12 +1,13 @@
-# nvidia-tracker
-I want to see how people are investing in Nvidia! For a passion project in school.
+# NVIDIA Tracker
 
-This project will scrape subreddits related to investing, searching for post titles that are related to Nvidia (NVDA, NVIDIA), then displaying ones.
+## Overview
+The NVIDIA Tracker is a passion project aimed at analyzing how people are investing in Nvidia (NVDA). This application scrapes relevant subreddits to gather insights and sentiment regarding Nvidia investments.
 
-Here is what needs to be done:
-1. dynamic frontend
-2. Additionalyl read top reddit comments on the reddit posts
-3. Add sentiment analysis that will compile the investment advice from reddit posts/comments, turning it into a single piece of investment advice
+## Features
+- **Dynamic Frontend**: Built with React and Vite for a responsive user experience.
+- **Reddit Scraping**: Collects post titles and comments related to Nvidia from various subreddits.
+- **Sentiment Analysis**: Compiles investment advice from Reddit posts and comments into a single sentiment score and recommendation.
 
-In the far future:
-1. Allow user to search up different stocks
+## Future Enhancements
+- Allow users to search for different stocks.
+- Improve sentiment analysis with more advanced techniques.
