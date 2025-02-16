@@ -8,6 +8,7 @@ from scraper import search_nvidia_mentions
 import pandas as pd
 from openai import OpenAI
 from config import OPENAI_API_KEY
+from stock_data import get_stock_data
 
 app = FastAPI(title="NVIDIA Mentions Tracker")
 
@@ -64,6 +65,11 @@ async def get_mentions(limit: int = 10):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# Add this new endpoint
+@app.get("/stock-data")
+async def stock_data():
+    return await get_stock_data()
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
